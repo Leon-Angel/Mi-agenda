@@ -310,6 +310,31 @@ html, body {
   font-family: 'DM Sans', sans-serif;
 }
 
+/* Upcoming alerts */
+.upcoming-section { margin-bottom: 20px; }
+.upcoming-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.upcoming-header .up-icon { font-size: 16px; }
+.upcoming-header .up-title { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; }
+.upcoming-card {
+  border-radius: var(--radius-sm); padding: 11px 14px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 6px; border: 1px solid;
+  cursor: pointer;
+}
+.upcoming-card.urgent { background: rgba(244,160,192,0.08); border-color: rgba(244,160,192,0.2); }
+.upcoming-card.soon { background: rgba(168,159,244,0.08); border-color: rgba(168,159,244,0.18); }
+.upcoming-card.coming { background: var(--surface); border-color: var(--border); }
+.upcoming-card .up-days {
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  min-width: 52px; text-align: center; padding: 3px 6px; border-radius: 6px;
+}
+.upcoming-card.urgent .up-days { background: rgba(244,160,192,0.15); color: var(--crea); }
+.upcoming-card.soon .up-days { background: rgba(168,159,244,0.15); color: var(--acad); }
+.upcoming-card.coming .up-days { background: var(--surface2); color: var(--text3); }
+.upcoming-card .up-body { flex: 1; min-width: 0; }
+.upcoming-card .up-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upcoming-card .up-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
 /* Notification toggle */
 .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
 .toggle-row .t-label { font-size: 14px; }
@@ -570,6 +595,8 @@ function renderAgenda() {
   `;
   content.appendChild(statsEl);
 
+  renderUpcoming(content);
+
   const lbl = document.createElement('div');
   lbl.className = 'day-label';
   lbl.textContent = DAYS_FULL[activeDate.getDay()] + ' ' + activeDate.getDate() + ' de ' + MONTHS[activeDate.getMonth()];
@@ -824,6 +851,53 @@ function renderStats() {
       </div>`;
     }).join('')}` : ''}
   `;
+}
+
+// === UPCOMING ===
+function renderUpcoming(content) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const in7 = new Date(today); in7.setDate(today.getDate()+7);
+
+  const upcoming = state.tasks
+    .filter(t => {
+      if (t.done) return false;
+      const td = new Date(t.date+'T12:00'); td.setHours(0,0,0,0);
+      const diff = Math.round((td - today) / 86400000);
+      return diff >= 0 && diff <= 7;
+    })
+    .map(t => {
+      const td = new Date(t.date+'T12:00'); td.setHours(0,0,0,0);
+      const diff = Math.round((td - today) / 86400000);
+      return { ...t, diff };
+    })
+    .sort((a,b) => a.diff - b.diff);
+
+  if (upcoming.length === 0) return;
+
+  const section = document.createElement('div');
+  section.className = 'upcoming-section';
+  section.innerHTML = `<div class="upcoming-header"><span class="up-icon">⚡</span><span class="up-title">Próximas entregas</span></div>`;
+
+  upcoming.forEach(t => {
+    const urgency = t.diff === 0 ? 'urgent' : t.diff <= 2 ? 'urgent' : t.diff <= 4 ? 'soon' : 'coming';
+    const dayLabel = t.diff === 0 ? 'hoy' : t.diff === 1 ? 'mañana' : `en ${t.diff} días`;
+    const catLabel = {acad:'Académico',clin:'Clínico',crea:'Creativo'}[t.cat];
+    const subLabel = t.cat === 'acad' && t.materia ? t.materia : catLabel;
+    const card = document.createElement('div');
+    card.className = `upcoming-card ${urgency}`;
+    card.innerHTML = `
+      <div class="up-days">${dayLabel}</div>
+      <div class="up-body">
+        <div class="up-name">${t.title}</div>
+        <div class="up-sub">${subLabel}</div>
+      </div>
+      <span class="task-tag ${t.cat}" style="flex-shrink:0">${t.cat==='acad'?'📚':t.cat==='clin'?'🩺':'🎙'}</span>
+    `;
+    card.onclick = () => openDetail(t.id);
+    section.appendChild(card);
+  });
+
+  content.insertBefore(section, content.firstChild);
 }
 
 // Init
