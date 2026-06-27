@@ -33,6 +33,32 @@
   --radius: 14px;
   --radius-sm: 8px;
 }
+/* Light mode (lavanda grisácea) */
+.light {
+  --bg: #e8e6f0;
+  --surface: #d8d5e8;
+  --surface2: #cbc8dc;
+  --border: rgba(80,70,120,0.1);
+  --border2: rgba(80,70,120,0.18);
+  --text: #1e1a2e;
+  --text2: rgba(30,26,46,0.6);
+  --text3: rgba(30,26,46,0.38);
+  --acad: #6c5fc7;
+  --acad-bg: rgba(108,95,199,0.12);
+  --acad-border: rgba(108,95,199,0.28);
+  --clin: #1a8a68;
+  --clin-bg: rgba(26,138,104,0.1);
+  --clin-border: rgba(26,138,104,0.25);
+  --crea: #c2426e;
+  --crea-bg: rgba(194,66,110,0.1);
+  --crea-border: rgba(194,66,110,0.25);
+}
+/* Theme toggle */
+.theme-btn { background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 4px 10px; font-size: 13px; cursor: pointer; color: var(--text2); display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.theme-btn:active { opacity: 0.7; }
+/* Upcoming check */
+.up-check { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border2); background: none; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: transparent; transition: all 0.15s; }
+.up-check:active { transform: scale(0.88); }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.5; overscroll-behavior: none; }
 #app { display: flex; flex-direction: column; height: 100dvh; max-width: 430px; margin: 0 auto; position: relative; }
@@ -197,7 +223,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="header">
       <div class="header-top">
         <div class="app-title">mi <span>agenda</span></div>
-        <div class="today-badge" id="today-badge"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="today-badge" id="today-badge"></div>
+          <button class="theme-btn" onclick="toggleTheme()" id="theme-btn">🌙</button>
+        </div>
       </div>
       <div class="week-nav">
         <button onclick="changeWeek(-1)">‹</button>
@@ -400,6 +429,10 @@ function renderAgenda() {
   document.getElementById('today-badge').textContent =
     DAYS_FULL[today.getDay()] + ', ' + today.getDate() + ' de ' + MONTHS[today.getMonth()];
 
+  const isLight = document.documentElement.classList.contains('light');
+  const tbtn = document.getElementById('theme-btn');
+  if (tbtn) tbtn.textContent = isLight ? '☀️' : '🌙';
+
   // day strip
   const strip = document.getElementById('day-strip');
   strip.innerHTML = '';
@@ -527,6 +560,7 @@ function renderUpcoming(content) {
       <div class="up-days">${dayLabel}</div>
       <div class="up-body"><div class="up-name">${t.title}</div><div class="up-sub">${subLabel}</div></div>
       <span class="task-tag ${t.cat}" style="flex-shrink:0">${t.cat==='acad'?'📚':t.cat==='clin'?'🩺':'🎙'}</span>
+      <button class="up-check" onclick="checkUpcoming('${t.id}',event)" title="Marcar como hecha">✓</button>
     `;
     card.onclick = () => openDetail(t.id);
     section.appendChild(card);
@@ -783,6 +817,27 @@ function renderStats() {
       </div>`;
     }).join('')}` : ''}
   `;
+}
+
+function checkUpcoming(id, e) {
+  e.stopPropagation();
+  const t = state.tasks.find(x => x.id===id);
+  if (t) { t.done = true; save(); renderAgenda(); }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = isLight ? '🌙' : '☀️';
+  localStorage.setItem('agenda_theme', isLight ? 'light' : 'dark');
+}
+
+// Apply saved theme
+if (localStorage.getItem('agenda_theme') === 'light') {
+  document.documentElement.classList.add('light');
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = '☀️';
+  });
 }
 
 // Init
