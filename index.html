@@ -104,15 +104,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .up-check { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border2); background: none; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--text3); }
 .up-check:active { transform: scale(0.88); }
 
-/* In-app alert popup */
-.alert-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-120px); z-index: 100; background: var(--surface); border: 1px solid var(--lila); border-radius: var(--radius); padding: 16px 18px; width: calc(100% - 40px); max-width: 390px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); }
-.alert-popup.show { transform: translateX(-50%) translateY(0); }
-.alert-popup-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
-.alert-popup-title { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
-.alert-popup-close { background: none; border: none; color: var(--text3); font-size: 18px; cursor: pointer; padding: 0 0 0 8px; }
-.alert-popup-sub { font-size: 12px; color: var(--text3); }
-.alert-popup-accent { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--lila); margin-right: 6px; }
-
 /* FAB */
 .fab { position: fixed; bottom: calc(60px + env(safe-area-inset-bottom) + 16px); right: 20px; width: 54px; height: 54px; border-radius: 50%; background: var(--text); border: none; color: var(--bg); font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 300; box-shadow: 0 4px 24px rgba(0,0,0,0.3); z-index: 20; }
 .fab:active { transform: scale(0.92); }
@@ -162,6 +153,16 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .toggle-sw::after { content:''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: white; top: 3px; left: 3px; transition: left 0.2s; }
 .toggle-sw.on::after { left: 23px; }
 .alert-time-field { margin-top: 10px; }
+/* Repeat */
+.repeat-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.repeat-chip { padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); font-size: 12px; cursor: pointer; }
+.repeat-chip.sel { background: var(--lila); color: #0f0e17; border-color: var(--lila); font-weight: 500; }
+.weekday-row { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.weekday-opt { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; }
+.weekday-opt.sel { background: var(--lila); color: #0f0e17; border-color: var(--lila); font-weight: 500; }
+.repeat-end-row { margin-top: 12px; }
+.repeat-end-opts { display: flex; gap: 8px; margin-bottom: 10px; }
+.repeat-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: rgba(168,159,244,0.12); color: var(--lila); border: 1px solid rgba(168,159,244,0.25); display: inline-flex; align-items: center; gap: 3px; }
 
 /* Detail */
 .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
@@ -245,15 +246,6 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="page-content" id="stats-content"></div>
   </div>
 
-  <!-- Alert popup -->
-  <div class="alert-popup" id="alert-popup">
-    <div class="alert-popup-top">
-      <div class="alert-popup-title"><span class="alert-popup-accent"></span><span id="alert-popup-text"></span></div>
-      <button class="alert-popup-close" onclick="dismissAlert()">×</button>
-    </div>
-    <div class="alert-popup-sub" id="alert-popup-sub"></div>
-  </div>
-
   <!-- Firma -->
   <div class="firma">
     <span class="firma-by">by</span>
@@ -286,9 +278,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <label>Subcategoría</label>
         <div class="materias-wrap" id="materia-chips"></div>
       </div>
-      <div class="form-field">
-        <label>Fecha</label>
-        <input type="date" id="f-date">
+      <div class="time-row">
+        <div class="form-field"><label>Fecha inicio</label><input type="date" id="f-date"></div>
+        <div class="form-field"><label>Fecha fin (opcional)</label><input type="date" id="f-date-end"></div>
       </div>
       <div class="time-row">
         <div class="form-field"><label>Hora inicio</label><input type="time" id="f-start"></div>
@@ -298,16 +290,20 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <label>Notas (opcional)</label>
         <textarea id="f-note" placeholder="Detalles, prioridad, materiales..."></textarea>
       </div>
-      <!-- ALERT -->
+      <!-- REPEAT -->
       <div class="form-field">
-        <label>Recordatorio</label>
-        <div class="alert-toggle-row">
-          <span class="at-label">Activar aviso</span>
-          <button class="toggle-sw" id="alert-toggle" onclick="toggleAlertSw()"></button>
+        <label>Repetición</label>
+        <div class="repeat-chips" id="repeat-chips"></div>
+        <div id="weekday-field" style="display:none">
+          <div class="weekday-row" id="weekday-row"></div>
         </div>
-        <div class="alert-time-field" id="alert-time-field" style="display:none">
-          <input type="time" id="f-alert-time" placeholder="Hora del aviso">
-          <div style="font-size:11px;color:var(--text3);margin-top:6px">El aviso aparecerá cuando la app esté abierta o en segundo plano.</div>
+        <div class="repeat-end-row" id="repeat-end-row" style="display:none">
+          <label style="margin-top:10px">¿Hasta cuándo se repite?</label>
+          <div class="repeat-end-opts">
+            <button class="repeat-chip" id="rend-forever" onclick="setRepeatEndMode('forever')">Para siempre</button>
+            <button class="repeat-chip" id="rend-until" onclick="setRepeatEndMode('until')">Hasta fecha</button>
+          </div>
+          <input type="date" id="f-repeat-until" style="display:none">
         </div>
       </div>
       <button class="save-btn" onclick="saveTask()">Guardar</button>
@@ -324,8 +320,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
       <div id="d-tag-row" style="margin-bottom:14px"></div>
       <div class="detail-row"><span>📅</span><span id="d-date"></span></div>
+      <div class="detail-row" id="d-date-end-row" style="display:none"><span>🏁</span><span id="d-date-end"></span></div>
       <div class="detail-row" id="d-time-row" style="display:none"><span>🕐</span><span id="d-time"></span></div>
-      <div class="detail-row" id="d-alert-row" style="display:none"><span>🔔</span><span id="d-alert"></span></div>
+      <div class="detail-row" id="d-repeat-row" style="display:none"><span>🔁</span><span id="d-repeat"></span></div>
       <div class="detail-row" id="d-materia-row" style="display:none"><span>🗂</span><span id="d-materia"></span></div>
       <div id="d-note-wrap" style="display:none"><div class="detail-note" id="d-note"></div></div>
       <div class="detail-actions">
@@ -383,9 +380,11 @@ let activeDayIdx=new Date().getDay()===0?6:new Date().getDay()-1;
 let selCatId='',selSubVal='',detailId=null,editingId=null;
 let currentPage='agenda',currentCatFilter=null;
 let ceEditId=null,ceSelColor='',ceSelEmoji='',ceHasSubs=false;
-let alertSwOn=false;
-let alertTimer=null;
-let alertDismissTimer=null;
+let selRepeat='none';
+let selWeekdays=[];
+let repeatEndMode='forever';
+const WEEKDAY_LABELS=['L','M','M','J','V','S','D']; // lun..dom display
+function repeatLabel(r){ return {weekly:'Semanal',monthly:'Mensual',weekdays:'Días específicos'}[r] || ''; }
 
 function load(){try{const s=localStorage.getItem('agenda_v3');if(s)return JSON.parse(s);}catch(e){}return{tasks:[],cats:JSON.parse(JSON.stringify(DEFAULT_CATS))};}
 function save(){localStorage.setItem('agenda_v3',JSON.stringify(state));}
@@ -423,15 +422,25 @@ function renderAgenda(){
   const strip=document.getElementById('day-strip');strip.innerHTML='';
   for(let i=0;i<7;i++){
     const d=new Date(ws);d.setDate(ws.getDate()+i);
+    const dKey=dateKey(d);
+    const hasTasks=state.tasks.some(t=>{
+      if(t.date===dKey) return true;
+      if(t.dateEnd&&t.date<=dKey&&t.dateEnd>=dKey) return true;
+      return false;
+    });
     const chip=document.createElement('div');
-    chip.className='day-chip'+(i===activeDayIdx?' active':'')+(dateKey(d)===todayKey?' today':'')+(state.tasks.some(t=>t.date===dateKey(d))?' has-tasks':'');
+    chip.className='day-chip'+(i===activeDayIdx?' active':'')+(dKey===todayKey?' today':'')+(hasTasks?' has-tasks':'');
     chip.innerHTML=`<span class="day-name">${DAYS_ES[d.getDay()]}</span><span class="day-num">${d.getDate()}</span><span class="day-dot"></span>`;
     chip.onclick=()=>{activeDayIdx=i;renderAgenda();};strip.appendChild(chip);
   }
 
   const activeDate=new Date(ws);activeDate.setDate(ws.getDate()+activeDayIdx);
   const activeDKey=dateKey(activeDate);
-  const dayTasks=state.tasks.filter(t=>t.date===activeDKey).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
+  const dayTasks=state.tasks.filter(t=>{
+    if(t.date===activeDKey) return true;
+    if(t.dateEnd&&t.date<=activeDKey&&t.dateEnd>=activeDKey) return true;
+    return false;
+  }).sort((a,b)=>(a.start||'99:99').localeCompare(b.start||'99:99'));
 
   const content=document.getElementById('main-content');content.innerHTML='';
 
@@ -463,7 +472,8 @@ function makeTaskCard(t){
   const timeStr=t.start?(t.end?`${t.start} – ${t.end}`:t.start):'';
   const subLabel=t.sub||(cat?cat.name:'');
   const tagStyle=`background:${s.bg};color:${s.color};border-color:${s.border}`;
-  const alertBadge=t.alertTime?`<span class="alert-badge">🔔 ${t.alertTime}</span>`:'';
+  const multiDayBadge=t.dateEnd?`<span class="repeat-badge">📆 varios días</span>`:'';
+  const repeatBadge=t.repeat&&t.repeat!=='none'?`<span class="repeat-badge">🔁 ${repeatLabel(t.repeat)}</span>`:'';
   card.innerHTML=`
     <button class="task-check" style="${t.done?`border-color:${s.color};color:${s.color};background:${s.bg}`:''}" onclick="toggleDone('${t.id}',event)">${t.done?'✓':''}</button>
     <div class="task-body">
@@ -471,7 +481,7 @@ function makeTaskCard(t){
       <div class="task-meta">
         ${timeStr?`<span class="task-time">${timeStr}</span>`:''}
         <span class="task-tag" style="${tagStyle}">${cat?cat.icon:''} ${subLabel}</span>
-        ${alertBadge}
+        ${multiDayBadge}${repeatBadge}
       </div>
     </div>`;
   card.onclick=()=>openDetail(t.id);return card;
@@ -524,17 +534,18 @@ function renderCatList(){
 
 // === ADD / EDIT ===
 function openAdd(){
-  editingId=null;selCatId='';selSubVal='';alertSwOn=false;
+  editingId=null;selCatId='';selSubVal='';selRepeat='none';selWeekdays=[];repeatEndMode='forever';
   document.getElementById('add-modal-title').textContent='Nueva actividad';
   document.getElementById('f-title').value='';
   document.getElementById('f-note').value='';
   document.getElementById('f-start').value='';
   document.getElementById('f-end').value='';
-  document.getElementById('f-alert-time').value='';
-  document.getElementById('alert-toggle').className='toggle-sw';
-  document.getElementById('alert-time-field').style.display='none';
+  document.getElementById('f-date-end').value='';
+  document.getElementById('f-repeat-until').value='';
+  document.getElementById('f-repeat-until').style.display='none';
   document.getElementById('materia-field').style.display='none';
   renderCatChips();
+  renderRepeatChips();
   const ws=getWeekStart(weekOffset),ad=new Date(ws);ad.setDate(ws.getDate()+activeDayIdx);
   document.getElementById('f-date').value=dateKey(ad);
   document.getElementById('add-modal').classList.add('open');
@@ -547,13 +558,15 @@ function openEdit(){
   document.getElementById('add-modal-title').textContent='Editar actividad';
   document.getElementById('f-title').value=t.title;
   document.getElementById('f-date').value=t.date;
+  document.getElementById('f-date-end').value=t.dateEnd||'';
   document.getElementById('f-start').value=t.start||'';
   document.getElementById('f-end').value=t.end||'';
   document.getElementById('f-note').value=t.note||'';
-  document.getElementById('f-alert-time').value=t.alertTime||'';
-  alertSwOn=!!t.alertTime;
-  document.getElementById('alert-toggle').className='toggle-sw'+(alertSwOn?' on':'');
-  document.getElementById('alert-time-field').style.display=alertSwOn?'':'none';
+  selRepeat=t.repeat||'none';
+  selWeekdays=t.repeatWeekdays?[...t.repeatWeekdays]:[];
+  repeatEndMode=t.repeatUntil?'until':'forever';
+  document.getElementById('f-repeat-until').value=t.repeatUntil||'';
+  renderRepeatChips();
   selCatId=t.cat;selSubVal=t.sub||'';
   renderCatChips();
   const cat=getCat(t.cat);
@@ -562,11 +575,47 @@ function openEdit(){
   document.getElementById('add-modal').classList.add('open');
 }
 
-function toggleAlertSw(){
-  alertSwOn=!alertSwOn;
-  document.getElementById('alert-toggle').className='toggle-sw'+(alertSwOn?' on':'');
-  document.getElementById('alert-time-field').style.display=alertSwOn?'':'none';
+function renderRepeatChips(){
+  const wrap=document.getElementById('repeat-chips');wrap.innerHTML='';
+  const opts=[['none','Solo una vez'],['weekly','Cada semana'],['monthly','Cada mes'],['weekdays','Días específicos']];
+  opts.forEach(([id,label])=>{
+    const btn=document.createElement('button');
+    btn.className='repeat-chip'+(selRepeat===id?' sel':'');
+    btn.textContent=label;
+    btn.onclick=()=>selectRepeat(id);
+    wrap.appendChild(btn);
+  });
+  document.getElementById('weekday-field').style.display=selRepeat==='weekdays'?'':'none';
+  document.getElementById('repeat-end-row').style.display=selRepeat!=='none'?'':'none';
+  if(selRepeat==='weekdays') renderWeekdayRow();
+  if(selRepeat!=='none') renderRepeatEndOpts();
 }
+
+function selectRepeat(id){
+  selRepeat=id;
+  if(id!=='weekdays') selWeekdays=[];
+  renderRepeatChips();
+}
+
+function renderWeekdayRow(){
+  const wrap=document.getElementById('weekday-row');wrap.innerHTML='';
+  DAYS_ES.forEach((d,i)=>{
+    // i: 0=Dom..6=Sab -> convert to mon-first index for matching JS getDay() later; store JS getDay() values directly
+    const btn=document.createElement('button');
+    btn.className='weekday-opt'+(selWeekdays.includes(i)?' sel':'');
+    btn.textContent=d.slice(0,1);
+    btn.onclick=()=>{ if(selWeekdays.includes(i)) selWeekdays=selWeekdays.filter(x=>x!==i); else selWeekdays.push(i); renderWeekdayRow(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderRepeatEndOpts(){
+  document.getElementById('rend-forever').className='repeat-chip'+(repeatEndMode==='forever'?' sel':'');
+  document.getElementById('rend-until').className='repeat-chip'+(repeatEndMode==='until'?' sel':'');
+  document.getElementById('f-repeat-until').style.display=repeatEndMode==='until'?'':'none';
+}
+
+function setRepeatEndMode(m){ repeatEndMode=m; renderRepeatEndOpts(); }
 
 function renderCatChips(){
   const wrap=document.getElementById('f-cat-chips');wrap.innerHTML='';
@@ -594,19 +643,69 @@ function renderMateriaChips(cat){
 function closeAdd(){document.getElementById('add-modal').classList.remove('open');editingId=null;}
 function closeAddOnBg(e){if(e.target.id==='add-modal')closeAdd();}
 
+function generateOccurrenceDates(startDateStr, repeat, weekdays, untilStr){
+  const dates=[startDateStr];
+  if(repeat==='none') return dates;
+  const start=new Date(startDateStr+'T12:00');
+  const horizonLimit=new Date(start); horizonLimit.setFullYear(horizonLimit.getFullYear()+2); // safety cap: 2 years out
+  const until = untilStr ? new Date(untilStr+'T12:00') : horizonLimit;
+  const cap = until < horizonLimit ? until : horizonLimit;
+
+  if(repeat==='weekly'){
+    let d=new Date(start);
+    while(true){
+      d=new Date(d); d.setDate(d.getDate()+7);
+      if(d>cap) break;
+      dates.push(dateKey(d));
+    }
+  } else if(repeat==='monthly'){
+    let d=new Date(start);
+    while(true){
+      d=new Date(d); d.setMonth(d.getMonth()+1);
+      if(d>cap) break;
+      dates.push(dateKey(d));
+    }
+  } else if(repeat==='weekdays'){
+    if(weekdays&&weekdays.length>0){
+      let d=new Date(start); d.setDate(d.getDate()+1);
+      while(d<=cap){
+        if(weekdays.includes(d.getDay())) dates.push(dateKey(d));
+        d=new Date(d); d.setDate(d.getDate()+1);
+      }
+    }
+  }
+  return dates;
+}
+
 function saveTask(){
   const title=document.getElementById('f-title').value.trim();
   if(!title){document.getElementById('f-title').focus();return;}
   if(!selCatId)return;
-  const alertTime=alertSwOn?document.getElementById('f-alert-time').value:'';
+  const baseDate=document.getElementById('f-date').value;
+  const dateEnd=document.getElementById('f-date-end').value;
+  const start=document.getElementById('f-start').value;
+  const end=document.getElementById('f-end').value;
+  const note=document.getElementById('f-note').value.trim();
+  const untilVal=repeatEndMode==='until'?document.getElementById('f-repeat-until').value:'';
+
   if(editingId){
     const t=state.tasks.find(x=>x.id===editingId);
-    if(t){t.title=title;t.cat=selCatId;t.date=document.getElementById('f-date').value;t.start=document.getElementById('f-start').value;t.end=document.getElementById('f-end').value;t.note=document.getElementById('f-note').value.trim();t.sub=selSubVal;t.alertTime=alertTime;t.alertFired=false;}
+    if(t){
+      t.title=title;t.cat=selCatId;t.date=baseDate;t.dateEnd=dateEnd;t.start=start;t.end=end;t.note=note;t.sub=selSubVal;
+      t.repeat=selRepeat;t.repeatWeekdays=selRepeat==='weekdays'?[...selWeekdays]:[];t.repeatUntil=untilVal;
+    }
   } else {
-    state.tasks.push({id:uid(),title,cat:selCatId,date:document.getElementById('f-date').value,start:document.getElementById('f-start').value,end:document.getElementById('f-end').value,note:document.getElementById('f-note').value.trim(),sub:selSubVal,alertTime,alertFired:false,done:false,created:Date.now()});
+    const groupId=uid();
+    const dates=generateOccurrenceDates(baseDate, selRepeat, selWeekdays, untilVal);
+    dates.forEach(d=>{
+      state.tasks.push({
+        id:uid(), groupId, title, cat:selCatId, date:d, dateEnd, start, end, note, sub:selSubVal,
+        repeat:selRepeat, repeatWeekdays:selRepeat==='weekdays'?[...selWeekdays]:[], repeatUntil:untilVal,
+        done:false, created:Date.now()
+      });
+    });
   }
   save();closeAdd();renderAgenda();if(currentPage==='catlist')renderCatList();
-  scheduleAlerts();
 }
 
 // === DETAIL ===
@@ -615,12 +714,27 @@ function openDetail(id){
   const cat=getCat(t.cat);const s=cat?catStyle(cat):{color:'#888',bg:'rgba(128,128,128,0.1)',border:'rgba(128,128,128,0.2)'};
   document.getElementById('d-title').textContent=t.title;
   const d=new Date(t.date+'T12:00');
-  document.getElementById('d-date').textContent=DAYS_FULL[d.getDay()]+', '+d.getDate()+' de '+MONTHS[d.getMonth()];
+  document.getElementById('d-date').textContent=(t.dateEnd?'Inicio: ':'')+DAYS_FULL[d.getDay()]+', '+d.getDate()+' de '+MONTHS[d.getMonth()];
+  const der=document.getElementById('d-date-end-row');
+  if(t.dateEnd){
+    const de=new Date(t.dateEnd+'T12:00');
+    der.style.display='flex';
+    document.getElementById('d-date-end').textContent='Término: '+DAYS_FULL[de.getDay()]+', '+de.getDate()+' de '+MONTHS[de.getMonth()];
+  } else { der.style.display='none'; }
   document.getElementById('d-tag-row').innerHTML=`<span class="task-tag" style="background:${s.bg};color:${s.color};border-color:${s.border}">${cat?cat.icon:''} ${cat?cat.name:''}</span>`;
   const tr=document.getElementById('d-time-row');
   if(t.start){tr.style.display='flex';document.getElementById('d-time').textContent=t.end?`${t.start} – ${t.end}`:t.start;}else{tr.style.display='none';}
-  const ar=document.getElementById('d-alert-row');
-  if(t.alertTime){ar.style.display='flex';document.getElementById('d-alert').textContent='Aviso a las '+t.alertTime;}else{ar.style.display='none';}
+  const rr=document.getElementById('d-repeat-row');
+  if(t.repeat&&t.repeat!=='none'){
+    rr.style.display='flex';
+    let txt=repeatLabel(t.repeat);
+    if(t.repeat==='weekdays'&&t.repeatWeekdays&&t.repeatWeekdays.length){
+      txt+=': '+t.repeatWeekdays.sort().map(i=>DAYS_ES[i]).join(', ');
+    }
+    if(t.repeatUntil){ const ud=new Date(t.repeatUntil+'T12:00'); txt+=' · hasta '+ud.getDate()+' '+MONTHS[ud.getMonth()].slice(0,3); }
+    else { txt+=' · sin fecha límite'; }
+    document.getElementById('d-repeat').textContent=txt;
+  } else { rr.style.display='none'; }
   const mr=document.getElementById('d-materia-row');
   if(t.sub){mr.style.display='flex';document.getElementById('d-materia').textContent=t.sub;}else{mr.style.display='none';}
   const nw=document.getElementById('d-note-wrap');
@@ -629,40 +743,16 @@ function openDetail(id){
 }
 function closeDetail(){document.getElementById('detail-modal').classList.remove('open');}
 function closeDetailOnBg(e){if(e.target.id==='detail-modal')closeDetail();}
-function deleteTask(){state.tasks=state.tasks.filter(t=>t.id!==detailId);save();closeDetail();renderAgenda();if(currentPage==='catlist')renderCatList();scheduleAlerts();}
-
-// === ALERTS ===
-function scheduleAlerts(){
-  if(alertTimer)clearInterval(alertTimer);
-  alertTimer=setInterval(checkAlerts,30000);
-  checkAlerts();
-}
-
-function checkAlerts(){
-  const now=new Date();
-  const todayKey=dateKey(now);
-  const hhmm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  state.tasks.forEach(t=>{
-    if(!t.alertTime||t.done||t.alertFired)return;
-    if(t.date===todayKey&&t.alertTime===hhmm){
-      t.alertFired=true;save();showAlert(t);
-    }
-  });
-}
-
-function showAlert(t){
-  const cat=getCat(t.cat);
-  document.getElementById('alert-popup-text').textContent=t.title;
-  document.getElementById('alert-popup-sub').textContent=(cat?cat.icon+' ':'')+( t.sub||( cat?cat.name:''))+' · '+t.alertTime;
-  const popup=document.getElementById('alert-popup');
-  popup.classList.add('show');
-  if(alertDismissTimer)clearTimeout(alertDismissTimer);
-  alertDismissTimer=setTimeout(dismissAlert,8000);
-}
-
-function dismissAlert(){
-  document.getElementById('alert-popup').classList.remove('show');
-  if(alertDismissTimer)clearTimeout(alertDismissTimer);
+function deleteTask(){
+  const t=state.tasks.find(x=>x.id===detailId);
+  if(t&&t.groupId&&t.repeat&&t.repeat!=='none'){
+    const deleteAll=confirm('Esta actividad se repite. ¿Quieres eliminar TODAS las repeticiones? (Cancelar = solo elimina esta fecha)');
+    if(deleteAll){ state.tasks=state.tasks.filter(x=>x.groupId!==t.groupId); }
+    else { state.tasks=state.tasks.filter(x=>x.id!==detailId); }
+  } else {
+    state.tasks=state.tasks.filter(x=>x.id!==detailId);
+  }
+  save();closeDetail();renderAgenda();if(currentPage==='catlist')renderCatList();
 }
 
 // === SUBCATEGORIAS ===
@@ -742,7 +832,6 @@ if(localStorage.getItem('agenda_theme')==='light')document.documentElement.class
 
 // Init
 renderAgenda();
-scheduleAlerts();
 
 if('serviceWorker' in navigator){
   const sw=`self.addEventListener('install',e=>e.waitUntil(caches.open('agenda-v3').then(c=>c.addAll(['./','./index.html','./manifest.json']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
