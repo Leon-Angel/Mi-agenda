@@ -267,8 +267,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="header-top"><div class="app-title">notas <span class="title-lila">rápidas</span></div></div>
     </div>
     <div class="page-content" id="notas-content"></div>
-    <button class="note-fab" onclick="openNoteAdd()">+</button>
   </div>
+
+  <button class="note-fab" id="note-fab" onclick="openNoteAdd()" style="display:none">+</button>
 
   <!-- Firma -->
   <div class="firma">
@@ -277,7 +278,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <span class="firma-angel">Ángel</span>
   </div>
 
-  <button class="fab" onclick="openAdd()">+</button>
+  <button class="fab" id="main-fab" onclick="openAdd()">+</button>
 
   <nav class="bottom-nav">
     <button class="nav-item active" id="nav-agenda" onclick="goPage('agenda')"><span class="nav-icon">📅</span>Agenda</button>
@@ -454,6 +455,11 @@ function goPage(p){
   currentPage=p;
   ['agenda','catlist','cats','stats','notas'].forEach(x=>document.getElementById('page-'+x).classList.toggle('active',x===p));
   ['agenda','cats','stats','notas'].forEach(x=>{const el=document.getElementById('nav-'+x);if(el)el.classList.toggle('active',x===p);});
+  // show correct FAB
+  const mainFab=document.getElementById('main-fab');
+  const noteFab=document.getElementById('note-fab');
+  if(mainFab) mainFab.style.display=(p==='agenda'||p==='catlist')?'flex':'none';
+  if(noteFab) noteFab.style.display=p==='notas'?'flex':'none';
   if(p==='cats')renderCatsPage();
   if(p==='stats')renderStats();
   if(p==='agenda')renderAgenda();
